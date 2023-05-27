@@ -1,0 +1,39 @@
+---
+
+- name: Get network namespaces
+  ansible.builtin.command:
+    cmd: ip netns
+  changed_when: false
+  register: namespaces
+
+- name: Remove CNI namespaces
+  community.general.ip_netns:
+    name: "{{ item | split(' ') | first }}"
+    state: absent
+  when: "'cni-' in item"
+  loop: "{{ namespaces.stdout_lines }}"
+
+- name: Get network interfaces
+  ansible.builtin.command:
+    cmd: ip link show master cni0
+  changed_when: false
+  register: interfaces
+  ignore_errors: true
+
+- name: Delete cni0 network interfaces
+  ansible.builtin.command:
+    cmd: ip link delete "{{ item | split('@') | first | split(' ') | last }}"
+  when: "'master cni0' in item"
+  loop: "{{ interfaces.stdout_lines }}"
+
+- name: Delete cni, flannel and kube network interfaces
+  ansible.builtin.command:
+    cmd: ip link delete "{{ item }}"
+  loop:
+    - cni0
+    - flannel.1
+    - flannel-v6.1
+    - kube-ipvs0
+    - flannel-wg
+    - flannel-wg-v6
+  ignore_errors: true

@@ -1,0 +1,14 @@
+---
+
+- ansible.builtin.import_tasks: prerequisites.yml
+
+- ansible.builtin.import_tasks: download.yml
+
+- ansible.builtin.import_tasks: raspbian.yml
+
+- ansible.builtin.import_tasks: k3s.yml
+
+- ansible.builtin.import_tasks: reset.yml
+  tags:
+    - never
+    - uninstall

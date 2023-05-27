@@ -1,0 +1,14 @@
+---
+
+- name: Include cluster init tasks for masters
+  ansible.builtin.include_tasks: k3s_cluster_init.yml
+  when: "'master' in group_names"
+
+- name: Include tasks to configure masters
+  ansible.builtin.include_tasks: k3s_master.yml
+  when: "'master' in group_names"
+
+- name: Include tasks to configure nodes
+  ansible.builtin.include_tasks: k3s_node.yml
+  when: "'node' in group_names"
+  

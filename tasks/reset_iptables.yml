@@ -1,0 +1,42 @@
+---
+
+- name: Save current state of iptables
+  community.general.iptables_state:
+    ip_version: "{{ item }}"
+    counters: true
+    state: saved
+    path: "/tmp/{{ item }}tables"
+  changed_when: false
+  with_items:
+    - ipv4
+    - ipv6
+
+- name: Create iptables restore file
+  ansible.builtin.copy:
+    remote_src: true
+    src: "/tmp/{{ item }}tables"
+    dest: "/tmp/{{ item }}tables.apply"
+    mode: '0600'
+  with_items:
+    - ipv4
+    - ipv6
+
+- name: Remove KUBE, CNI and flannel rules from iptables
+  ansible.builtin.lineinfile:
+    path: "/tmp/{{ item }}tables.apply"
+    state: absent
+    regexp: '^.*(KUBE-|CNI-|(?i)flannel).*$'
+  with_items:
+    - ipv4
+    - ipv6
+
+- name: Restore iptables state
+  community.general.iptables_state:
+    ip_version: "{{ item }}"
+    state: restored
+    path: "/tmp/{{ item }}tables.apply"
+  async: "{{ ansible_timeout }}"
+  poll: 0
+  with_items:
+    - ipv4
+    - ipv6

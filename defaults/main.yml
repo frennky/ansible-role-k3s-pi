@@ -1,0 +1,23 @@
+---
+k3s_version: v1.27.1+k3s1
+k3s_data_dir: /var/lib/rancher/k3s
+# If you define multiple masters you should be providing a loadbalanced
+# apiserver endpoint to all masters here. This default value is only suitable
+# for a non-HA setup, if used in a HA setup, it will not protect you if the
+# first node fails.
+k3s_api_server: "{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}"
+# You should define k3s_token so that masters can talk together securely
+k3s_token: "mysupersecuretoken"
+# server_init_args are only used for cluster initialisation
+server_init_args: >-
+  {% if groups['master'] | length > 1 %}
+    {% if ansible_host == hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) %}
+      --cluster-init
+    {% else %}
+      --server https://{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}:6443
+    {% endif %}
+    --token {{ k3s_token }}
+  {% endif %}
+  {{ extra_server_args | default('') }}
+k3s_extra_server_args: ""
+k3s_extra_agent_args: ""
