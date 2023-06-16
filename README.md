@@ -53,7 +53,7 @@ Example Playbook and Inventory
   roles:
     - role: ansible-role-k3s-pi
 
-- name: Configure K3s agent nodes
+- name: Configure K3s worker nodes
   hosts: agent
   roles:
     - role: ansible-role-k3s-pi
