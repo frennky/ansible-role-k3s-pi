@@ -1,14 +1,14 @@
 ---
 
-- name: Include cluster init tasks for masters
+- name: Include cluster init tasks for master nodes
   ansible.builtin.include_tasks: k3s_cluster_init.yml
-  when: "'master' in group_names"
+  when: "'server' in group_names"
 
-- name: Include tasks to configure masters
-  ansible.builtin.include_tasks: k3s_master.yml
-  when: "'master' in group_names"
+- name: Include tasks to configure master nodes
+  ansible.builtin.include_tasks: k3s_server.yml
+  when: "'server' in group_names"
 
-- name: Include tasks to configure nodes
-  ansible.builtin.include_tasks: k3s_node.yml
-  when: "'node' in group_names"
+- name: Include tasks to configure agent nodes
+  ansible.builtin.include_tasks: k3s_agent.yml
+  when: "'agent' in group_names"
   

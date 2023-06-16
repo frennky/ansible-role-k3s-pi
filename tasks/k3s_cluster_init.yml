@@ -1,40 +1,47 @@
 ---
 
-- name: Clean up previous k3s-init
+- name: Stop previous K3s service if exists
   ansible.builtin.systemd:
-    name: k3s-init
-    state: stopped
-  failed_when: false
+    name: k3s
+    daemon_reload: true
+    state: started
+    enabled: true
 
-- name: Clean up previous k3s-init
-  ansible.builtin.command: systemctl reset-failed k3s-init
-  failed_when: false
-  changed_when: false
-  args:
-    warn: false  # The ansible systemd module does not support reset-failed
+- name: Copy K3s service file
+  ansible.builtin.template:
+    src: k3s.service.j2
+    dest: /etc/systemd/system/k3s.service
+    owner: root
+    group: root
+    mode: '0644'
 
-- name: Init cluster inside the transient k3s-init service
-  ansible.builtin.command:
-    cmd: "systemd-run -p RestartSec=2 \
-                      -p Restart=on-failure \
-                      --unit=k3s-init \
-                      k3s server {{ server_init_args }}"
-    creates: /etc/systemd/system/k3s.service
+- name: Copy K3s config
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: '0600'
 
-- name: Cluster verification
-  block:
-    - name: Verify that all nodes actually joined
-      ansible.builtin.command:
-        cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/master=true" -o=jsonpath="{.items[*].metadata.name}"
-      register: nodes
-      until: nodes.rc == 0 and (nodes.stdout.split() | length) == (groups['master'] | length)
-      retries: 20
-      delay: 10
-      changed_when: false
-  always:
-    - name: Kill the temporary service used for initialization
-      ansible.builtin.systemd:
-        name: k3s-init
-        state: stopped
-      failed_when: false
+- name: Ensure cluster init is enabled
+  ansible.builtin.lineinfile:
+    path: /etc/rancher/k3s/config.yaml
+    regexp: '^cluster-init'
+    line: 'cluster-init: true'
+
+- name: Enable and start K3s service
+  ansible.builtin.systemd:
+    name: k3s
+    daemon_reload: true
+    state: started
+    enabled: true
+
+- name: Verify that all master nodes actually joined
   when: not ansible_check_mode
+  ansible.builtin.command:
+    cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/master=true" -o=jsonpath="{.items[*].metadata.name}"
+  register: nodes
+  until: nodes.rc == 0 and (nodes.stdout.split() | length) == (groups['server'] | length)
+  retries: 20
+  delay: 10
+  changed_when: false

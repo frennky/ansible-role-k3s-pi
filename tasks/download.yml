@@ -7,4 +7,4 @@
     dest: /usr/local/bin/k3s
     owner: root
     group: root
-    mode: 0755
+    mode: '0755'
