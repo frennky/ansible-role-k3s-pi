@@ -1,24 +1,22 @@
 ---
 
-- name: Copy K3s service file
+- name: Set cluster_init to false
+  ansible.builtin.set_fact:
+    cluster_init: false
+
+- name: Copy K3s config
   ansible.builtin.template:
-    src: k3s.service.j2
-    dest: /etc/systemd/system/k3s.service
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
     owner: root
     group: root
-    mode: '0644'
-
-- name: Ensure cluster init is disabled
-  ansible.builtin.lineinfile:
-    path: /etc/rancher/k3s/config.yaml
-    regexp: '^cluster-init'
-    line: 'cluster-init: false'
+    mode: '0600'
 
 - name: Enable and start K3s service
   ansible.builtin.systemd:
     name: k3s
     daemon_reload: true
-    state: started
+    state: restarted
     enabled: true
 
 - name: Create directory .kube

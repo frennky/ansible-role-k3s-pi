@@ -1,6 +1,6 @@
 ---
 
-- name: Stop previous K3s service if exists
+- name: Stop K3s service if exists
   ansible.builtin.systemd:
     name: k3s
     daemon_reload: true
@@ -22,6 +22,10 @@
     state: directory
     mode: '0600'
 
+- name: Set cluster_init to true
+  ansible.builtin.set_fact:
+    cluster_init: true
+
 - name: Copy K3s config
   ansible.builtin.template:
     src: config.yaml.j2
@@ -29,12 +33,6 @@
     owner: root
     group: root
     mode: '0600'
-
-- name: Ensure cluster init is enabled
-  ansible.builtin.lineinfile:
-    path: /etc/rancher/k3s/config.yaml
-    regexp: '^cluster-init'
-    line: 'cluster-init: true'
 
 - name: Enable and start K3s service
   ansible.builtin.systemd:
