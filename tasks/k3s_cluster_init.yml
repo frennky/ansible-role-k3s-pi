@@ -4,8 +4,9 @@
   ansible.builtin.systemd:
     name: k3s
     daemon_reload: true
-    state: started
-    enabled: true
+    state: stopped
+    enabled: false
+  failed_when: false
 
 - name: Copy K3s service file
   ansible.builtin.template:
@@ -14,6 +15,12 @@
     owner: root
     group: root
     mode: '0644'
+
+- name: Create K3s config directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: '0600'
 
 - name: Copy K3s config
   ansible.builtin.template:
