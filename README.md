@@ -17,54 +17,27 @@ All default variables are set in `defaults/main.yml`. To change K3s version use 
 k3s_version: v1.27.1+k3s1
 ```
 
-To change K3s data directory, you can use following variable:
+If you define multiple servers (master nodes) you should be providing a loadbalanced apiserver endpoint to all masters here. This default value is only suitable for a non-HA setup, if used in a HA setup, it will not protect you if the first node fails.
 
 ```yaml
-k3s_data_dir: /var/lib/rancher/k3s
+k3s_api_server: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
 ```
 
-If you define multiple masters you should be providing a loadbalanced apiserver endpoint to all masters here. This default value is only suitable for a non-HA setup, if used in a HA setup, it will not protect you if the first node fails.
+To change API port use following variable:
 
 ```yaml
-k3s_api_server: "{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}"
+k3s_api_port: 6443
 ```
 
-You should definitly change the default value for token so that masters can talk together securely.
+You should definitly change the default value for token so that servers can talk together securely.
 
 ```yaml
-k3s_token: "mysupersecuretoken"
+k3s_token: 'mysupersecuretoken'
 ```
 
-For HA setup, you'll need to initialise the cluster first in order to join masters. You can tweak the args with following variable:
+In case you need to provide extra server or agent configuration, you can do so by editing `config.yaml.j2` template.
 
-```yaml
-server_init_args: >-
-  {% if groups['master'] | length > 1 %}
-    {% if ansible_host == hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) %}
-      --cluster-init
-    {% else %}
-      --server https://{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}:6443
-    {% endif %}
-    --token {{ k3s_token }}
-  {% endif %}
-  {{ extra_server_args | default('') }}
-```
-
-In case you need to provide extra server arguments, you can do so with following variable:
-
-```yaml
-k3s_extra_server_args: ""
-```
-
-For more details on available server args refer to [K3s docs](https://docs.k3s.io/cli/server).
-
-In case you nee to provide extra agent arguments, you can do so with following variable:
-
-```yaml
-k3s_extra_agent_args: ""
-```
-
-For more details on available agent args refer to [K3s docs](https://docs.k3s.io/cli/agent).
+For more details on available server args refer to [docs](https://docs.k3s.io/cli/server). And for more details on available agent args refer to [docs](https://docs.k3s.io/cli/agent). Details on `config.yaml` can be found [here](https://docs.k3s.io/installation/configuration#configuration-file).
 
 Dependencies
 ------------
@@ -75,13 +48,13 @@ Example Playbook and Inventory
 ------------------------------
 
 ```yaml
-- name: Configure K3s masters
-  hosts: master
+- name: Configure K3s master nodes
+  hosts: server
   roles:
     - role: ansible-role-k3s-pi
 
-- name: Configure K3s nodes
-  hosts: node
+- name: Configure K3s worker nodes
+  hosts: agent
   roles:
     - role: ansible-role-k3s-pi
 ```
@@ -89,12 +62,12 @@ Example Playbook and Inventory
 ```yaml
 all:
   children:
-    master:
+    server:
       hosts:
         pi_m1:
         pi_m2:
         pi_m3:
-    node:
+    agent:
       hosts:
         pi_n1:
         pi_n2:
@@ -102,8 +75,8 @@ all:
         pi_n4:
         pi_n5:
     k3s_cluster:
-      master:
-      node:
+      server:
+      agent:
 ```
 
 Uninstalling K3s
