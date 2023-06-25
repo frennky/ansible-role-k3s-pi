@@ -58,9 +58,13 @@
     path: ~/.kube
     state: directory
     mode: '0700'
+  delegate_to: localhost
+  run_once: true
 
 - name: Copy config file to local user home directory
   ansible.builtin.fetch:
     src: ~{{ ansible_user }}/.kube/config
     dest: ~/.kube/config
     flat: true
+  delegate_to: server[0]
+  run_once: true
