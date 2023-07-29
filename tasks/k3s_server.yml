@@ -60,6 +60,7 @@
     mode: '0700'
   delegate_to: localhost
   run_once: true
+  become: false
 
 - name: Copy config file to local user home directory
   ansible.builtin.fetch:
