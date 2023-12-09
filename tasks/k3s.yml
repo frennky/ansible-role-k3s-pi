@@ -11,4 +11,3 @@
 - name: Include tasks to configure worker nodes
   ansible.builtin.include_tasks: k3s_agent.yml
   when: "'agent' in group_names"
-  
