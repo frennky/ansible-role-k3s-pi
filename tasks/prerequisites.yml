@@ -13,11 +13,7 @@
     regexp: '^((?!.*\bcgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory\b).*)$'
     line: '\1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory'
     backrefs: true
-  register: boot_cmdline
-
-- name: Reboot system
-  ansible.builtin.reboot:
-  when: boot_cmdline is changed
+  notify: Reboot system
 
 - name: Flush iptables before changing to iptables-legacy
   ansible.builtin.iptables:
