@@ -15,6 +15,9 @@
     backrefs: true
   notify: Reboot system
 
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
 - name: Flush iptables before changing to iptables-legacy
   ansible.builtin.iptables:
     flush: true
