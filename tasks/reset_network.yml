@@ -30,6 +30,7 @@
 - name: Delete cni, flannel and kube network interfaces
   ansible.builtin.command:
     cmd: ip link delete "{{ item }}"
+  register: result
   loop:
     - cni0
     - flannel.1
@@ -38,3 +39,4 @@
     - flannel-wg
     - flannel-wg-v6
   changed_when: false
+  failed_when: '"Error" in result.stdout'

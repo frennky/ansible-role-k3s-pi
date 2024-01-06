@@ -25,7 +25,7 @@
   ansible.builtin.lineinfile:
     path: "/tmp/{{ item }}tables.apply"
     state: absent
-    regexp: '^.*(KUBE-|CNI-|(?i)flannel).*$'
+    regexp: '^.*(KUBE-|CNI-|(?i:flannel)).*$'
   with_items:
     - ipv4
     - ipv6
