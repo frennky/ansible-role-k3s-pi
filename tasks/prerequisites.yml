@@ -9,7 +9,7 @@
 
 - name: Activate cgroup support
   ansible.builtin.lineinfile:
-    path: /boot/cmdline.txt
+    path: /boot/firmware/cmdline.txt
     regexp: '^((?!.*\bcgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory\b).*)$'
     line: '\1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory'
     backrefs: true
