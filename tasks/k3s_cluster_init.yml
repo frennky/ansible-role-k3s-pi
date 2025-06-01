@@ -28,21 +28,40 @@
 
 - name: Copy K3s config
   ansible.builtin.template:
-    src: config.yaml.j2
+    src: cluster-init.config.yaml.j2
     dest: /etc/rancher/k3s/config.yaml
     owner: root
     group: root
     mode: '0600'
 
-- name: Enable and start K3s service
+- name: Enable and start K3s service on the first server
   ansible.builtin.systemd:
     name: k3s
     daemon_reload: true
     state: started
     enabled: true
+  when: inventory_hostname == groups['server'][0]
+  async: 300
+  poll: 0
 
-- name: Verify that all master nodes actually joined
-  when: not ansible_check_mode
+- name: Wait for the first server to initialize
+  ansible.builtin.wait_for:
+    host: "{{ groups['server'][0] }}"
+    port: "{{ k3s_api_port }}"
+    delay: 10
+    sleep: 5
+    timeout: 300
+  when: inventory_hostname != groups['server'][0]
+
+- name: Enable and start K3s service on other servers
+  ansible.builtin.systemd:
+    name: k3s
+    daemon_reload: true
+    state: started
+    enabled: true
+  when: inventory_hostname != groups['server'][0]
+
+- name: Verify that all other master nodes joined the cluster
   ansible.builtin.command:
     cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/master=true" -o=jsonpath="{.items[*].metadata.name}"
   register: nodes
@@ -50,3 +69,4 @@
   retries: 20
   delay: 10
   changed_when: false
+  when: not ansible_check_mode

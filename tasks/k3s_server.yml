@@ -6,7 +6,7 @@
 
 - name: Copy K3s config
   ansible.builtin.template:
-    src: config.yaml.j2
+    src: server.config.yaml.j2
     dest: /etc/rancher/k3s/config.yaml
     owner: root
     group: root
