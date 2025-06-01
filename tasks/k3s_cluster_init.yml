@@ -25,6 +25,7 @@
 - name: Set cluster_init to true on the first server
   ansible.builtin.set_fact:
     cluster_init: "{{ inventory_hostname == groups['server'][0] }}"
+  when: inventory_hostname == groups['server'][0]
 
 - name: Copy K3s config
   ansible.builtin.template:
@@ -47,6 +48,8 @@
   ansible.builtin.wait_for:
     host: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
     port: "{{ k3s_api_port }}"
+    delay: 10
+    sleep: 5
     timeout: 300
 
 - name: Enable and start K3s service on other servers
@@ -58,11 +61,11 @@
   when: not cluster_init
 
 - name: Verify that all other master nodes joined the cluster
-  when: not ansible_check_mode and cluster_init
+  when: not ansible_check_mode
   ansible.builtin.command:
     cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/master=true" -o=jsonpath="{.items[*].metadata.name}"
   register: nodes
-  until: nodes.rc == 0 and (nodes.stdout.split() | length) == ((groups['server'] | length) - 1)
+  until: nodes.rc == 0 and (nodes.stdout.split() | length) == (groups['server'] | length)
   retries: 20
   delay: 10
   changed_when: false
