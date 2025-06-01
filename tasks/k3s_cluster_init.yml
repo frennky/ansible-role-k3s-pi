@@ -41,15 +41,17 @@
     state: started
     enabled: true
   when: inventory_hostname == groups['server'][0]
+  async: 300
+  poll: 0
 
 - name: Wait for the first server to initialize
   ansible.builtin.wait_for:
-    host: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
+    host: "{{ groups['server'][0] }}"
     port: "{{ k3s_api_port }}"
     delay: 10
     sleep: 5
     timeout: 300
-  when: not hostvars[groups['server'][0]]['ansible_host']
+  when: inventory_hostname != groups['server'][0]
 
 - name: Enable and start K3s service on other servers
   ansible.builtin.systemd:
@@ -57,7 +59,7 @@
     daemon_reload: true
     state: started
     enabled: true
-  when: not hostvars[groups['server'][0]]['ansible_host']
+  when: inventory_hostname != groups['server'][0]
 
 - name: Verify that all other master nodes joined the cluster
   ansible.builtin.command:
