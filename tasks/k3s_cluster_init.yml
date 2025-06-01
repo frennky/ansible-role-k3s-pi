@@ -22,14 +22,13 @@
     state: directory
     mode: '0600'
 
-- name: Set cluster_init to true on the first server
+- name: Set cluster_init to true
   ansible.builtin.set_fact:
-    cluster_init: "{{ inventory_hostname == groups['server'][0] }}"
-  when: inventory_hostname == groups['server'][0]
+    cluster_init: true
 
 - name: Copy K3s config
   ansible.builtin.template:
-    src: config.yaml.j2
+    src: cluster-init.config.yaml.j2
     dest: /etc/rancher/k3s/config.yaml
     owner: root
     group: root
@@ -41,16 +40,16 @@
     daemon_reload: true
     state: started
     enabled: true
-  when: cluster_init
+  when: hostvars[groups['server'][0]]['ansible_host']
 
 - name: Wait for the first server to initialize
-  when: not cluster_init
   ansible.builtin.wait_for:
     host: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
     port: "{{ k3s_api_port }}"
     delay: 10
     sleep: 5
     timeout: 300
+  when: not hostvars[groups['server'][0]]['ansible_host']
 
 - name: Enable and start K3s service on other servers
   ansible.builtin.systemd:
@@ -58,10 +57,9 @@
     daemon_reload: true
     state: started
     enabled: true
-  when: not cluster_init
+  when: not hostvars[groups['server'][0]]['ansible_host']
 
 - name: Verify that all other master nodes joined the cluster
-  when: not ansible_check_mode
   ansible.builtin.command:
     cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/master=true" -o=jsonpath="{.items[*].metadata.name}"
   register: nodes
@@ -69,3 +67,4 @@
   retries: 20
   delay: 10
   changed_when: false
+  when: not ansible_check_mode
