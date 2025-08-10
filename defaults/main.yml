@@ -8,4 +8,3 @@ k3s_api_server: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(grou
 k3s_api_port: 6443
 # You should define k3s_token so that servers can talk together securely
 k3s_token: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters') }}"
-k3s_debug: false
