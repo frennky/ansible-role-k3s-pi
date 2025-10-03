@@ -1,5 +1,5 @@
 ---
-k3s_version: v1.33.1+k3s1
+k3s_version: v1.34.1+k3s1
 # If you define multiple servers (master nodes) you should be providing a loadbalanced
 # apiserver endpoint to all masters here. This default value is only suitable
 # for a non-HA setup, if used in a HA setup, it will not protect you if the
